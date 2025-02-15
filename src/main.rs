@@ -1,8 +1,10 @@
-
 use api::bandcamp_api::BandcampAPI;
+use services::collection_page_scraper::CollectionPageScraper;
 use std::env;
 
 mod api;
+mod models;
+mod services;
 
 #[tokio::main]
 async fn main() -> Result<(), ()> {
@@ -21,16 +23,20 @@ async fn main() -> Result<(), ()> {
             2 => identity = arg,
             3 => download_path = arg,
             // ...how do i ignore this altogether?
-            _ => print!(""),
+            _ => (),
         }
     });
 
     let api = BandcampAPI::new(&username, &identity);
-    let response = api
-        .get_collection_summary_html()
-        .await
-        .expect("failed to get collection summary html");
-    println!("{}", response.text().await.unwrap());
+    let scraper = CollectionPageScraper::new(
+        &api.get_collection_summary_html()
+            .await
+            .expect("failed to get collection summary html")
+            .text()
+            .await
+            .expect("failed to parse HTML DOM into text"),
+    );
+    scraper.get_purchased_items();
 
     Ok(())
 }
