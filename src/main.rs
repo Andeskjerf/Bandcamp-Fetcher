@@ -34,10 +34,36 @@
 //   -H "Origin: https://bandcamp.com" \
 //   https://bandcamp.com/login_cb
 
+use api::bandcamp_api::BandcampAPI;
+use std::env;
+
 mod api;
 
+#[tokio::main]
+async fn main() -> Result<(), ()> {
+    if env::args().len() < 3 {
+        println!("error: not enough arguments.");
+        println!("args:\n\t1: identity_cookie\n\t2: download_path");
+        return Err(());
+    }
 
-fn main() {
-    println!("one day, something will be happening here");
+    let mut identity: String = String::new();
+    let mut download_path: String = String::new();
+    env::args().enumerate().for_each(|(i, arg)| {
+        match i {
+            1 => identity = arg,
+            2 => download_path = arg,
+            // ...how do i ignore this altogether?
+            _ => print!(""),
+        }
+    });
+
+    let api = BandcampAPI::new(&identity);
+    let response = api
+        .get_collection_summary()
+        .await
+        .expect("failed to get collection summary");
+    println!("{}", response.text().await.unwrap());
+
+    Ok(())
 }
-
