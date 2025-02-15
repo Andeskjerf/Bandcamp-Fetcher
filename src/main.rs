@@ -1,45 +1,3 @@
-// working curl to fetch albums, using our assigned cookies
-// will return a download URL we can use to fetch a zip containing the flac for said album
-//
-// identity appears to be the most important / only cookie we need?
-// ----
-// get download URL
-// ---- PARAMS
-// * id= // NEEDED!! this refers to the album i want to download. is in the XHR response
-// * .rand= // no idea what this does, but does not appear to be needed
-// * sitem_id= // NEEDED!! appears to be important, API returns error if not included. is in the DOM
-// * sig= // NEEDED!! the value can be found in the DOM for a logged in users collection page
-// curl \
-//   --cookie "identity=redacted;" \
-//   -H "Origin: https://bandcamp.com" \
-//   -H "Accept: application/json, text/javascript, */*; q=0.01" \
-//   "https://popplers5.bandcamp.com/statdownload/album?enc=flac&id=1405377090&sig=8d51978c9a34ac46a293adfa490bc192&sitem_id=314614390&.vrs=1"
-// ----
-// get collection summary
-// curl \
-//   --cookie "identity=redacted;" \
-//   -H "Origin: https://bandcamp.com" \
-//   -H "Accept: application/json, text/javascript, */*; q=0.01" \
-//   "https://bandcamp.com/api/fan/2/collection_summary"
-// ----
-// get collection summary HTML DOM, which contains important params to get our download link
-// curl \
-//   --cookie "identity=redacted;" \
-//   -H "Origin: https://bandcamp.com" \
-//   -H "Accept: application/json, text/javascript, */*; q=0.01" \
-//   "https://bandcamp.com/user"
-// ----
-// logging in, not done. requires recaptcha shit. gives us our identity cookie
-// curl -v \
-//   -X POST \
-//   -F user.name="redacted" \
-//   -F login.password="redacted" \
-//   -F login.twofactor="" \
-//   -F login.twofactor_remember="" \
-//   -F login.from="fan_page" \
-//   -H "Content-Type: application/x-www-form-urlencoded" \
-//   -H "Origin: https://bandcamp.com" \
-//   https://bandcamp.com/login_cb
 
 use api::bandcamp_api::BandcampAPI;
 use std::env;
@@ -48,9 +6,9 @@ mod api;
 
 #[tokio::main]
 async fn main() -> Result<(), ()> {
-    if env::args().len() < 3 {
+    if env::args().len() < 4 {
         println!("error: not enough arguments.");
-        println!("args:\n\t1: username\n\t2: identity_cookie\n\t3: download_path");
+        println!("args:\n\t1: username\n\t2: identity cookie\n\t3: download path");
         return Err(());
     }
 
@@ -69,9 +27,9 @@ async fn main() -> Result<(), ()> {
 
     let api = BandcampAPI::new(&username, &identity);
     let response = api
-        .get_collection_summary()
+        .get_collection_summary_html()
         .await
-        .expect("failed to get collection summary");
+        .expect("failed to get collection summary html");
     println!("{}", response.text().await.unwrap());
 
     Ok(())

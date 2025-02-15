@@ -21,7 +21,7 @@ impl BandcampAPI {
         }
     }
 
-    fn make_request(self, request_type: RequestType, url: &str) -> RequestBuilder {
+    fn make_request(&self, request_type: RequestType, url: &str) -> RequestBuilder {
         let request_builder = match request_type {
             RequestType::Get => self.client.get(url),
             RequestType::Post => self.client.post(url),
@@ -30,12 +30,21 @@ impl BandcampAPI {
         request_builder.header("Cookie", format!("identity={}", self.identity))
     }
 
-    pub async fn get_collection_summary(self) -> Result<reqwest::Response, reqwest::Error> {
+    pub async fn get_collection_summary(&self) -> Result<reqwest::Response, reqwest::Error> {
         self.make_request(
             RequestType::Get,
             "https://bandcamp.com/api/fan/2/collection_summary",
         )
         .header("Accept", "application/json, text/javascript, */*; q=0.01")
+        .send()
+        .await
+    }
+
+    pub async fn get_collection_summary_html(&self) -> Result<reqwest::Response, reqwest::Error> {
+        self.make_request(
+            RequestType::Get,
+            &format!("https://bandcamp.com/{}", self.username),
+        )
         .send()
         .await
     }
