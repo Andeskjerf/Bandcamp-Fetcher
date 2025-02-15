@@ -22,6 +22,13 @@
 //   -H "Accept: application/json, text/javascript, */*; q=0.01" \
 //   "https://bandcamp.com/api/fan/2/collection_summary"
 // ----
+// get collection summary HTML DOM, which contains important params to get our download link
+// curl \
+//   --cookie "identity=redacted;" \
+//   -H "Origin: https://bandcamp.com" \
+//   -H "Accept: application/json, text/javascript, */*; q=0.01" \
+//   "https://bandcamp.com/user"
+// ----
 // logging in, not done. requires recaptcha shit. gives us our identity cookie
 // curl -v \
 //   -X POST \
@@ -43,22 +50,24 @@ mod api;
 async fn main() -> Result<(), ()> {
     if env::args().len() < 3 {
         println!("error: not enough arguments.");
-        println!("args:\n\t1: identity_cookie\n\t2: download_path");
+        println!("args:\n\t1: username\n\t2: identity_cookie\n\t3: download_path");
         return Err(());
     }
 
+    let mut username: String = String::new();
     let mut identity: String = String::new();
     let mut download_path: String = String::new();
     env::args().enumerate().for_each(|(i, arg)| {
         match i {
-            1 => identity = arg,
-            2 => download_path = arg,
+            1 => username = arg,
+            2 => identity = arg,
+            3 => download_path = arg,
             // ...how do i ignore this altogether?
             _ => print!(""),
         }
     });
 
-    let api = BandcampAPI::new(&identity);
+    let api = BandcampAPI::new(&username, &identity);
     let response = api
         .get_collection_summary()
         .await

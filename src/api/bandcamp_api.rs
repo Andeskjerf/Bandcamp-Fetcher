@@ -7,14 +7,16 @@ enum RequestType {
 
 pub struct BandcampAPI {
     client: reqwest::Client,
+    username: String,
     identity: String,
 }
 
 impl BandcampAPI {
-    pub fn new(identity: &str) -> Self {
+    pub fn new(username: &str, identity: &str) -> Self {
         let builder = reqwest::ClientBuilder::new().cookie_store(true);
         Self {
             client: builder.build().expect("failed to build client"),
+            username: username.to_string(),
             identity: identity.to_string(),
         }
     }
