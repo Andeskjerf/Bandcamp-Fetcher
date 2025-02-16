@@ -72,7 +72,7 @@ curl -v \
 
 in order to actually get the download URL, which we need for the first curl above, we need some special signature URL parameter (no, not the one we've already gotten, but a new one...)... this param is embedded in the DOM for the download page, the page where you get a dropdown to choose the format of your download.
 
-so, we could just do a GET request to get the DOM, find the <select> element and get our signature! easy peasy, right?
+so, we could just do a GET request to get the DOM, find the select element and get our signature! easy peasy, right?
 
 fun fact, it appears you don't even need a valid identity cookie to view & download from this page?
 
