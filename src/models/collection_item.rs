@@ -1,9 +1,14 @@
+use std::collections::HashMap;
+
+use super::bandcamp_format::BandcampFormat;
+
 #[derive(Debug, Clone)]
 pub struct CollectionItem {
     band: String,
     // album, single, EP, etc
     name: String,
     download_link: String,
+    formats: HashMap<String, BandcampFormat>,
 }
 
 impl CollectionItem {
@@ -12,6 +17,7 @@ impl CollectionItem {
             band: String::new(),
             name: String::new(),
             download_link: String::new(),
+            formats: HashMap::new(),
         }
     }
 
@@ -20,6 +26,7 @@ impl CollectionItem {
             band: band.to_string(),
             name: name.to_string(),
             download_link: download_link.to_string(),
+            formats: HashMap::new(),
         }
     }
 
@@ -33,6 +40,14 @@ impl CollectionItem {
 
     pub fn download_link(&self) -> String {
         self.download_link.clone()
+    }
+
+    pub fn set_formats(&mut self, formats: HashMap<String, BandcampFormat>) {
+        self.formats = formats;
+    }
+
+    pub fn formats(&self) -> HashMap<String, BandcampFormat> {
+        self.formats.clone()
     }
 
     pub fn set_band(&mut self, band: &str) {
