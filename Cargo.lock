@@ -51,6 +51,8 @@ dependencies = [
  "log",
  "reqwest",
  "scraper",
+ "serde",
+ "serde_json",
  "simplelog",
  "tokio",
 ]

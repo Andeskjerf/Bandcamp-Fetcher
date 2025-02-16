@@ -48,4 +48,13 @@ impl BandcampAPI {
         .send()
         .await
     }
+
+    pub async fn get_download_page_html(
+        &self,
+        url: &str,
+    ) -> Result<reqwest::Response, reqwest::Error> {
+        self.make_request(RequestType::Get, &format!("{url}"))
+            .send()
+            .await
+    }
 }

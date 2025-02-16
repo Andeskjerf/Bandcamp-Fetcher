@@ -56,9 +56,10 @@ impl CollectionPageScraper {
 
         let mut items: Vec<CollectionItem> = vec![];
 
-        // get band name & item name from the DOM
+        // iterate over all items found on the page
         for child in selection {
             items.push(CollectionItem::new());
+            // get band name & item name from the DOM
             for (i, child) in child.child_elements().enumerate() {
                 let last_item = items.last_mut().unwrap();
                 match i {

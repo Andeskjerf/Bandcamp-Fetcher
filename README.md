@@ -88,9 +88,4 @@ curl \
   "https://bandcamp.com/download?from=collection&payment_id=<payment_id>&sig=<sig>&sitem_id=<sitem_id>"
 ```
 
-not so fast! there's some js that runs on page load, which then gets all the params required to get a valid URL. bummer!! 
-
-so, what do we do?
-
-- we could use something like selenium (gross)
-- figure out what the js is doing, and then replicate the calls it's doing to get the params (yay)
+it's almost that simple, luckily! there's no API requests that has the params we need, and at first glance, it appears some js is constructing our URL. luckily, all the js does is get a div with the ID 'pagedata' (which is in the DOM before the js executes!), which contains a data-blob with some json data. we can find all the different formats, including the proper download URL, within this json text! yippie!
