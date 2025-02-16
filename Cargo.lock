@@ -48,6 +48,7 @@ dependencies = [
 name = "bandcamp_fetcher"
 version = "0.1.0"
 dependencies = [
+ "log",
  "reqwest",
  "scraper",
  "simplelog",

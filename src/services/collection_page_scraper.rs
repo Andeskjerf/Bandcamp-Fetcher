@@ -13,60 +13,76 @@ impl CollectionPageScraper {
         }
     }
 
-    fn get_band_name(&self, html_dom: &str) -> String {
-        let split = html_dom
-            .split('>')
-            // not sure why clippy disagrees; I must skip 1?
-            .skip(1)
-            .next()
-            .unwrap()
+    fn get_item_name(&self, html_dom: &str) -> String {
+        html_dom
+            // there's a newline after the item name, for some reason. only get what's before the \n
             .split("\n")
             .next()
             .unwrap()
-            .split(' ')
-            .collect::<Vec<&str>>()
-            .join(" ");
-        split.to_string()
+            .to_string()
     }
 
-    pub fn get_purchased_items(&self) -> Vec<CollectionItem> {
-        // let selector =
-        //     Selector::parse(r#"li[class="collection-item-container"]"#).unwrap();
-        let selector_details =
-            Selector::parse(r#"div[class="collection-title-details"] a"#).unwrap();
-        let selector_download_links = Selector::parse(r#"span[class="redownload-item"]"#).unwrap();
-        let mut selection_details = self.html.select(&selector_details);
-        let selection_download_links = self.html.select(&selector_download_links);
+    fn get_band_name(&self, html_dom: &str) -> String {
+        html_dom
+            // we know that the band / artist name is prefixed by 'by '
+            .split("by ")
+            // skip 1, the 'by ' part
+            .nth(1)
+            .unwrap()
+            .to_string()
+    }
+
+    // TODO: does not get the actual download URL, but rather the page that loads the URL we need...
+    /// Parses the DOM to get the download URL for all items on the collection page
+    fn get_item_download_url(&self) -> Vec<String> {
+        let selector = Selector::parse(r#"span[class="redownload-item"] a"#).unwrap();
+
+        self.html
+            .select(&selector)
+            .fold(vec![], |mut acc: Vec<String>, elem| {
+                acc.push(
+                    elem.attr("href")
+                        .expect("element does not have a href attribute, for some reason!")
+                        .to_string(),
+                );
+                acc
+            })
+    }
+
+    /// Parses the DOM to find the band name, and the item name (Album, single, EP, etc)
+    fn get_item_details(&self) -> Vec<CollectionItem> {
+        let selector = Selector::parse(r#"div[class="collection-title-details"] a"#).unwrap();
+        let selection = self.html.select(&selector);
 
         let mut items: Vec<CollectionItem> = vec![];
 
-        for child in selection_details {
+        // get band name & item name from the DOM
+        for child in selection {
             items.push(CollectionItem::new());
             for (i, child) in child.child_elements().enumerate() {
+                let last_item = items.last_mut().unwrap();
                 match i {
-                    1 => items
-                        .last()
-                        .unwrap()
-                        .set_name(&self.get_band_name(&child.html())),
-                    2 => (),
-                    _ => (),
+                    0 => last_item.set_name(&self.get_item_name(&child.inner_html())),
+                    1 => last_item.set_band(&self.get_band_name(&child.inner_html())),
+                    _ => log::warn!("found unknown element, i=={i}, while parsing DOM for purchased items! DOM may have changed and could cause the parser to break!"),
                 };
             }
         }
 
-        println!("{:?}", items);
+        items
+    }
 
-        // selection_details.for_each(|elem| {
-        //     println!("{:?}", elem.first_child().unwrap());
-        // });
+    pub fn get_purchased_items(&self) -> Vec<CollectionItem> {
+        let items = self.get_item_details();
+        let urls = self.get_item_download_url();
 
-        // for s in selection {
-        //     println!("yeah we iterate mothafuckaaa");
-        //     println!("{:?}", s);
-        // }
-
-        // println!("why da fuck len 0?? {}", selection.);
-
-        vec![]
+        // somewhat naive, this expects that we're getting the details & urls in the same order
+        // that should be the case, as the order of items is not random on the DOM
+        // it could still be more robust!
+        items
+            .iter()
+            .zip(urls.iter())
+            .map(|(item, url)| CollectionItem::with_params(&item.band(), &item.name(), url))
+            .collect::<Vec<CollectionItem>>()
     }
 }
