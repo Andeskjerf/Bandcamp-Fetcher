@@ -50,9 +50,13 @@ fn main() -> Result<(), ()> {
     let mut artist_subdirs: HashMap<String, Vec<String>> = HashMap::new();
     log::info!("found {} items!", items.len());
 
+    let mut did_something = false;
+
     // TODO: this ain't pretty. too many things happening
     // this should give us a collection of direct URLs to get our zips from
     for item in items.iter_mut() {
+        did_something = true;
+
         // TODO: handle errors gracefully
         let html = api
             .get_download_page_html(&item.download_link())
@@ -103,6 +107,10 @@ fn main() -> Result<(), ()> {
                     .expect("failed to remove archive after extraction");
             }
         }
+    }
+
+    if !did_something {
+        log::info!("nothing to do, no new items since last run")
     }
 
     Ok(())
