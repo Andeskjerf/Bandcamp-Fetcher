@@ -89,8 +89,7 @@ fn main() -> Result<(), ()> {
                 bandcamp_format.encoding_name(),
                 bandcamp_format.size_mb(),
             );
-            files
-                .download_zip(&bandcamp_format.url(), &zip_path)
+            api.download_zip(&bandcamp_format.url(), &zip_path)
                 .expect("failed to get zip from Bandcamp!");
 
             log::info!(
@@ -99,7 +98,7 @@ fn main() -> Result<(), ()> {
                 item.band(),
                 album_dir
             );
-            files.unzip_archive(&zip_path, "");
+            files.unzip_archive(&zip_path);
         }
     }
 

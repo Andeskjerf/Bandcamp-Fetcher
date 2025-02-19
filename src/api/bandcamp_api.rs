@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 // use reqwest::RequestBuilder;
 use reqwest::blocking::RequestBuilder;
 
@@ -22,19 +24,27 @@ impl BandcampAPI {
         }
     }
 
-    fn make_request(&self, request_type: RequestType, url: &str) -> RequestBuilder {
+    fn make_request(
+        &self,
+        request_type: RequestType,
+        url: &str,
+        timeout: Option<u64>,
+    ) -> RequestBuilder {
         let request_builder = match request_type {
             RequestType::Get => self.client.get(url),
             RequestType::Post => self.client.post(url),
         };
 
-        request_builder.header("Cookie", format!("identity={}", self.identity))
+        request_builder
+            .header("Cookie", format!("identity={}", self.identity))
+            .timeout(Duration::from_secs(timeout.unwrap_or(30)))
     }
 
     pub fn get_collection_summary(&self) -> Result<reqwest::blocking::Response, reqwest::Error> {
         self.make_request(
             RequestType::Get,
             "https://bandcamp.com/api/fan/2/collection_summary",
+            None,
         )
         .header("Accept", "application/json, text/javascript, */*; q=0.01")
         .send()
@@ -46,6 +56,7 @@ impl BandcampAPI {
         self.make_request(
             RequestType::Get,
             &format!("https://bandcamp.com/{}", self.username),
+            None,
         )
         .send()
     }
@@ -54,7 +65,23 @@ impl BandcampAPI {
         &self,
         url: &str,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.make_request(RequestType::Get, &format!("{url}"))
+        self.make_request(RequestType::Get, url, None).send()
+    }
+
+    // does it make sense to have this function here?
+    pub fn download_zip(&self, url: &str, path: &str) -> Result<u64, std::io::Error> {
+        let response = self
+            // at worst, an album is surely not larger than a GB?
+            // is 30 minutes timeout too much?
+            .make_request(RequestType::Get, url, Some(60 * 30))
             .send()
+            .expect("unable to make request!");
+        let bytes = response.bytes().expect("unable to parse request as bytes!");
+
+        let mut file = std::fs::File::create(path).expect("unable to create file for download!");
+        let mut content = std::io::Cursor::new(bytes);
+
+        // copy request bytes into file
+        std::io::copy(&mut content, &mut file)
     }
 }

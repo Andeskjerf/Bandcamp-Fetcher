@@ -1,4 +1,8 @@
-use std::{fs, io::Cursor, path::Path};
+use std::{
+    fs,
+    io::{Cursor, Read},
+    path::Path,
+};
 
 pub struct Files {
     path: String,
@@ -55,27 +59,22 @@ impl Files {
         subdirs
     }
 
-    // does it make sense to have this function here?
-    pub fn download_zip(&self, url: &str, path: &str) -> Result<u64, std::io::Error> {
-        let response = reqwest::blocking::get(url).expect("unable to make request!");
-        let bytes = response.bytes().expect("unable to parse request as bytes!");
-
-        let mut file = std::fs::File::create(path).expect("unable to create file for download!");
-        let mut content = Cursor::new(bytes);
-
-        // copy request bytes into file
-        std::io::copy(&mut content, &mut file)
-    }
-
-    pub fn unzip_archive(&self, zip_path: &str, dest_path: &str) {
+    pub fn unzip_archive(&self, zip_path: &str) {
         let mut zip_archive = zip::ZipArchive::new(
             std::fs::File::open(zip_path).expect("failed to open zip file at specified path!"),
         )
         .expect("failed to open file as a zip archive!");
 
+        let mut split = zip_path.split('/').collect::<Vec<&str>>();
+        split.pop().expect("unable to pop zip_path");
+        let folder_to_extract_to = split.join("/");
+
         for i in 0..zip_archive.len() {
-            let mut file = zip_archive.by_index(i).unwrap();
-            println!("filename: {}", file.name());
+            let mut song = zip_archive.by_index(i).unwrap();
+            let mut file =
+                std::fs::File::create(format!("{}/{}", folder_to_extract_to, song.name()))
+                    .expect("unable to create file for download!");
+            std::io::copy(&mut song, &mut file).expect("failed to copy zip file to path");
         }
     }
 }
