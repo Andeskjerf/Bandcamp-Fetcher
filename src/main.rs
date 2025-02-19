@@ -86,7 +86,7 @@ fn main() -> Result<(), ()> {
                 .expect("failed to get encoding for album!");
 
             log::info!(
-                "downloading album archive '{}' by '{}' with '{}' encoding ({})...",
+                "downloading '{}' by '{}' with '{}' encoding ({})...",
                 item.name(),
                 item.band(),
                 bandcamp_format.encoding_name(),
