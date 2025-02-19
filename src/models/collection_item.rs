@@ -31,7 +31,8 @@ impl CollectionItem {
     }
 
     pub fn band(&self) -> String {
-        self.band.clone()
+        // we don't want this special ampersand character
+        self.band.replace("&amp;", "&").clone()
     }
 
     pub fn name(&self) -> String {
