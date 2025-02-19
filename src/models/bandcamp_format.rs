@@ -7,3 +7,17 @@ pub struct BandcampFormat {
     size_mb: String,
     url: String,
 }
+
+impl BandcampFormat {
+    pub fn url(&self) -> String {
+        self.url.clone()
+    }
+
+    pub fn encoding_name(&self) -> &str {
+        &self.encoding_name
+    }
+
+    pub fn size_mb(&self) -> &str {
+        &self.size_mb
+    }
+}

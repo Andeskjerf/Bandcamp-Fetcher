@@ -61,4 +61,18 @@ impl CollectionItem {
     pub fn set_download_link(&mut self, download_link: &str) {
         self.download_link = download_link.to_string();
     }
+
+    pub fn get_format_by_encoding(&self, encoding: &str) -> Option<BandcampFormat> {
+        self.formats
+            .get(encoding)
+            .or_else(|| {
+                Some(
+                    self.formats
+                        .values()
+                        .next()
+                        .expect("failed to get fallback encoding, none exists!"),
+                )
+            })
+            .cloned()
+    }
 }

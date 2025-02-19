@@ -3,14 +3,22 @@ use services::{
     collection_page_scraper::CollectionPageScraper, download_page_scraper::DownloadPageScraper,
     files::Files,
 };
+use simplelog::{Config, TermLogger};
 use std::{collections::HashMap, env};
 
 mod api;
 mod models;
 mod services;
 
-#[tokio::main]
-async fn main() -> Result<(), ()> {
+fn main() -> Result<(), ()> {
+    TermLogger::init(
+        log::LevelFilter::Info,
+        Config::default(),
+        simplelog::TerminalMode::Mixed,
+        simplelog::ColorChoice::Auto,
+    )
+    .expect("failed to init logger!");
+
     if env::args().len() < 4 {
         println!("error: not enough arguments.");
         println!("args:\n\t1: username\n\t2: identity cookie\n\t3: download path");
@@ -32,25 +40,24 @@ async fn main() -> Result<(), ()> {
     let scraper = CollectionPageScraper::new(
         // TODO: handle errors gracefully
         &api.get_collection_summary_html()
-            .await
             .expect("failed to get collection summary html")
             .text()
-            .await
             .expect("failed to parse HTML DOM into text"),
     );
 
+    log::info!("getting purchased items for user {}...", username);
     let mut items = scraper.get_purchased_items();
     let mut artist_subdirs: HashMap<String, Vec<String>> = HashMap::new();
+    log::info!("found {} items!", items.len());
 
+    // TODO: this ain't pretty. too many things happening
     // this should give us a collection of direct URLs to get our zips from
     for item in items.iter_mut() {
         // TODO: handle errors gracefully
         let html = api
             .get_download_page_html(&item.download_link())
-            .await
             .expect("failed to get download page html")
             .text()
-            .await
             .expect("failed to parse download page HTML into text");
 
         let scraper = DownloadPageScraper::new(&html);
@@ -61,11 +68,40 @@ async fn main() -> Result<(), ()> {
             .or_insert_with(|| files.get_artist_subdirectories(&item.band()));
 
         if !dirs.iter().any(|elem| item.name() == *elem) {
+            log::info!(
+                "'{}' by '{}' not found on filesystem",
+                item.name(),
+                item.band()
+            );
+
             let album_dir = files.get_artist_album_folder(&item.band(), &item.name());
+            let zip_path = format!("{}/album.zip", album_dir);
+            // TODO: the user should be able to pick their preferred encodings
+            // maybe multiple choices, so we can pick the next best option and so on?
+            let bandcamp_format = item
+                .get_format_by_encoding("flac") // try to get flac if possible, will fallback to something else if it fails
+                .expect("failed to get encoding for album!");
+
+            log::info!(
+                "downloading album archive '{}' by '{}' with '{}' encoding ({})...",
+                item.name(),
+                item.band(),
+                bandcamp_format.encoding_name(),
+                bandcamp_format.size_mb(),
+            );
+            files
+                .download_zip(&bandcamp_format.url(), &zip_path)
+                .expect("failed to get zip from Bandcamp!");
+
+            log::info!(
+                "unzipping '{}' by '{}' to {}...",
+                item.name(),
+                item.band(),
+                album_dir
+            );
+            files.unzip_archive(&zip_path, "");
         }
     }
-
-    println!("{:?}", items.first().unwrap().formats());
 
     Ok(())
 }
