@@ -99,6 +99,8 @@ fn main() -> Result<(), ()> {
                     album_dir
                 );
                 files.unzip_archive(&file_path);
+                std::fs::remove_file(&file_path)
+                    .expect("failed to remove archive after extraction");
             }
         }
     }
