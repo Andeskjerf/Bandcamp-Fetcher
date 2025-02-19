@@ -55,8 +55,6 @@ fn main() -> Result<(), ()> {
     // TODO: this ain't pretty. too many things happening
     // this should give us a collection of direct URLs to get our zips from
     for item in items.iter_mut() {
-        did_something = true;
-
         // TODO: handle errors gracefully
         let html = api
             .get_download_page_html(&item.download_link())
@@ -72,6 +70,7 @@ fn main() -> Result<(), ()> {
             .or_insert_with(|| files.get_artist_subdirectories(&item.band()));
 
         if !dirs.iter().any(|elem| item.name() == *elem) {
+            did_something = true;
             log::info!(
                 "'{}' by '{}' not found on filesystem",
                 item.name(),
