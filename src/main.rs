@@ -75,7 +75,6 @@ fn main() -> Result<(), ()> {
             );
 
             let album_dir = files.get_artist_album_folder(&item.band(), &item.name());
-            let zip_path = format!("{}/album.zip", album_dir);
             // TODO: the user should be able to pick their preferred encodings
             // maybe multiple choices, so we can pick the next best option and so on?
             let bandcamp_format = item
@@ -89,16 +88,18 @@ fn main() -> Result<(), ()> {
                 bandcamp_format.encoding_name(),
                 bandcamp_format.size_mb(),
             );
-            api.download_zip(&bandcamp_format.url(), &zip_path)
-                .expect("failed to get zip from Bandcamp!");
+            let file_path = api.download_file(&bandcamp_format.url(), &album_dir);
 
-            log::info!(
-                "unzipping '{}' by '{}' to {}...",
-                item.name(),
-                item.band(),
-                album_dir
-            );
-            files.unzip_archive(&zip_path);
+            // singles do not come in zips
+            if file_path.contains(".zip") {
+                log::info!(
+                    "unzipping '{}' by '{}' to {}...",
+                    item.name(),
+                    item.band(),
+                    album_dir
+                );
+                files.unzip_archive(&file_path);
+            }
         }
     }
 

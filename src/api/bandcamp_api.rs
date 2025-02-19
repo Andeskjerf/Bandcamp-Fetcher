@@ -69,19 +69,35 @@ impl BandcampAPI {
     }
 
     // does it make sense to have this function here?
-    pub fn download_zip(&self, url: &str, path: &str) -> Result<u64, std::io::Error> {
-        let response = self
+    pub fn download_file(&self, url: &str, path: &str) -> String {
+        let mut response = self
             // at worst, an album is surely not larger than a GB?
             // is 30 minutes timeout too much?
             .make_request(RequestType::Get, url, Some(60 * 30))
             .send()
             .expect("unable to make request!");
-        let bytes = response.bytes().expect("unable to parse request as bytes!");
 
-        let mut file = std::fs::File::create(path).expect("unable to create file for download!");
-        let mut content = std::io::Cursor::new(bytes);
+        let content = String::from_utf8(
+            response
+                .headers()
+                .get("content-disposition")
+                .expect("unable to get content_disposition header")
+                .as_bytes()
+                .to_vec(),
+        )
+        .expect("unable to convert header value to string!");
+
+        let split = content.split(';').collect::<Vec<&str>>();
+        // we know the position of the different elements, so lets get them naively
+        // not very robust
+        let filename = split[1].split(r#"""#).collect::<Vec<&str>>()[1];
+
+        let path = format!("{}/{}", path, filename);
+        let mut file = std::fs::File::create(&path).expect("unable to create file for download!");
 
         // copy request bytes into file
-        std::io::copy(&mut content, &mut file)
+        std::io::copy(&mut response, &mut file).expect("failed to copy response to file");
+
+        path
     }
 }
