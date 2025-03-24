@@ -1,17 +1,17 @@
-use std::{
-    fs,
-    io::{Cursor, Read},
-    path::Path,
-};
+use std::{fs, path::Path};
+
+use super::sanitizer::Sanitizer;
 
 pub struct Files {
     path: String,
+    sanitizer: Sanitizer,
 }
 
 impl Files {
     pub fn new(path: &str) -> Self {
         Self {
             path: path.to_string(),
+            sanitizer: Sanitizer::new(),
         }
     }
 
@@ -23,7 +23,7 @@ impl Files {
     }
 
     pub fn get_artist_folder(&self, artist: &str) -> String {
-        let path_binding = format!("{}/{}", self.path, artist);
+        let path_binding = format!("{}/{}", self.path, self.sanitizer.sanitize_path(artist));
         let path = Path::new(&path_binding);
         if !path.exists() {
             self.create_directory(path.to_str().unwrap());
@@ -33,7 +33,13 @@ impl Files {
     }
 
     pub fn get_artist_album_folder(&self, artist: &str, album: &str) -> String {
-        let path_binding = format!("{}/{}", self.get_artist_folder(artist), album);
+        // we do need to sanitize the artist name, but we do it in the other function
+        // also sanitize the album name for good measure
+        let path_binding = format!(
+            "{}/{}",
+            self.get_artist_folder(artist),
+            self.sanitizer.sanitize_path(album)
+        );
         let path = Path::new(&path_binding);
         if !path.exists() {
             self.create_directory(path.to_str().unwrap());
