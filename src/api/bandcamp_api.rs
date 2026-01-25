@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use log::info;
 // use reqwest::RequestBuilder;
 use reqwest::blocking::RequestBuilder;
 
@@ -38,6 +39,24 @@ impl BandcampAPI {
         request_builder
             .header("Cookie", format!("identity={}", self.identity))
             .timeout(Duration::from_secs(timeout.unwrap_or(30)))
+    }
+
+    pub fn get_collection_items_json(
+        &self,
+        fan_id: u64,
+        token: &str,
+        count: u32,
+    ) -> Result<reqwest::blocking::Response, reqwest::Error> {
+        self.make_request(
+            RequestType::Post,
+            "https://bandcamp.com/api/fancollection/1/collection_items",
+            None,
+        )
+        .body(format!(
+            "{{\"fan_id\":{fan_id},\"older_than_token\":\"{token}\",\"count\":{count}}}"
+        ))
+        .header("Accept", "application/json, text/javascript, */*; q=0.01")
+        .send()
     }
 
     pub fn get_collection_summary(&self) -> Result<reqwest::blocking::Response, reqwest::Error> {

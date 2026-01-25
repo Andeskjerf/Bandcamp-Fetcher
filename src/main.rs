@@ -1,10 +1,16 @@
 use api::bandcamp_api::BandcampAPI;
+use log::info;
 use services::{
     collection_page_scraper::CollectionPageScraper, download_page_scraper::DownloadPageScraper,
     files::Files,
 };
 use simplelog::{Config, TermLogger};
 use std::{collections::HashMap, env};
+
+use crate::{
+    models::api::collection_items::CollectionItems,
+    services::page_data_extractor::PageDataExtractor,
+};
 
 mod api;
 mod models;
@@ -36,14 +42,34 @@ fn main() -> Result<(), ()> {
     });
 
     let api = BandcampAPI::new(&username, &identity);
+    let collection_page = api
+        .get_collection_summary_html()
+        .expect("Failed to get collection summary HTML!")
+        .text()
+        .expect("Failed to parse HTML DOM into text!");
     let files = Files::new(&download_path);
     let scraper = CollectionPageScraper::new(
         // TODO: handle errors gracefully
-        &api.get_collection_summary_html()
-            .expect("failed to get collection summary html")
-            .text()
-            .expect("failed to parse HTML DOM into text"),
+        &collection_page,
     );
+
+    let pagedata_extractor = PageDataExtractor::new(&collection_page);
+    let fan = pagedata_extractor.get_fan().unwrap();
+    let collection_data = pagedata_extractor.get_collection_data().unwrap();
+
+    let collection_items: CollectionItems = api
+        .get_collection_items_json(
+            fan.id(),
+            collection_data.last_token(),
+            collection_data.item_count() - collection_data.batch_size(),
+        )
+        .unwrap()
+        .json()
+        .unwrap();
+
+    let mut urls = collection_data.redownload_urls().clone();
+    urls.extend(collection_items.redownload_urls().clone());
+    info!("{urls:?}");
 
     log::info!("getting purchased items for user {}...", username);
     let mut items = scraper.get_purchased_items();
