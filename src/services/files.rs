@@ -1,4 +1,7 @@
-use std::{fs, path::Path};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 use super::sanitizer::Sanitizer;
 
@@ -15,6 +18,15 @@ impl Files {
         }
     }
 
+    fn expand_tilde(path: &str) -> PathBuf {
+        if let Some(end) = path.strip_prefix("~/") {
+            let home = env::var("HOME").expect("HOME not set");
+            PathBuf::from(home).join(end)
+        } else {
+            PathBuf::from(path)
+        }
+    }
+
     fn create_directory(&self, path: &str) {
         if let Err(e) = fs::create_dir(path) {
             // TODO: handle this gracefully
@@ -23,13 +35,13 @@ impl Files {
     }
 
     pub fn get_artist_folder(&self, artist: &str) -> String {
-        let path_binding = format!("{}/{}", self.path, self.sanitizer.sanitize_path(artist));
-        let path = Path::new(&path_binding);
+        let path_binding = format!("{}{}", self.path, self.sanitizer.sanitize_path(artist));
+        let path = Files::expand_tilde(&path_binding);
         if !path.exists() {
             self.create_directory(path.to_str().unwrap());
         }
 
-        path_binding
+        String::from(path.to_str().unwrap())
     }
 
     pub fn get_artist_album_folder(&self, artist: &str, album: &str) -> String {
@@ -40,7 +52,7 @@ impl Files {
             self.get_artist_folder(artist),
             self.sanitizer.sanitize_path(album)
         );
-        let path = Path::new(&path_binding);
+        let path = Files::expand_tilde(&path_binding);
         if !path.exists() {
             self.create_directory(path.to_str().unwrap());
         }

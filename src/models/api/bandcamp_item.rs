@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::api::url_hints::UrlHints;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BandcampItem {
     pub fan_id: u64,
@@ -71,15 +73,6 @@ pub struct BandcampItem {
     pub featured_track_license_id: Option<u64>,
     pub licensed_item: Option<bool>,
     pub download_available: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UrlHints {
-    pub subdomain: String,
-    pub custom_domain: Option<String>,
-    pub custom_domain_verified: Option<bool>,
-    pub slug: String,
-    pub item_type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

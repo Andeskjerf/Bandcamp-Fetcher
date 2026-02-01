@@ -2,21 +2,21 @@ use log::error;
 use scraper::{Html, Selector};
 use serde_json::Value;
 
-use crate::models::api::{collection_data::CollectionData, fan::Fan};
+use crate::models::{
+    api::{collection_data::CollectionData, fan::Fan},
+    bandcamp_sale::BandcampSale,
+};
 
 /// Utility struct to retrieve the PageData blob embedded in the DOM of each page
 /// This blob contains critical data formatted as a json required to make requests
 pub struct PageDataExtractor {
-    html: Html,
     json: Value,
 }
 
 impl PageDataExtractor {
     pub fn new(html_dom: &str) -> Self {
-        let parsed = Html::parse_document(html_dom);
         Self {
-            html: parsed.clone(),
-            json: PageDataExtractor::get_page_data(parsed),
+            json: PageDataExtractor::get_page_data(Html::parse_document(html_dom)),
         }
     }
 
@@ -65,6 +65,23 @@ impl PageDataExtractor {
             Ok(res) => Some(res),
             Err(err) => {
                 error!("Failed to parse 'collection_data' into model! {err:?}");
+                None
+            }
+        }
+    }
+
+    /// Gets a list of items from the download page
+    /// Appears to only contain a single item, the item we are currently viewing
+    pub fn get_digital_items(&self) -> Option<Vec<BandcampSale>> {
+        let val = self.get_value(&self.json, "digital_items").unwrap();
+        let download_items = val.to_string();
+        let result = serde_path_to_error::deserialize(&mut serde_json::Deserializer::from_str(
+            &download_items,
+        ));
+        match result {
+            Ok(res) => Some(res),
+            Err(err) => {
+                error!("Failed to parse 'download_items' into model! {err:?}");
                 None
             }
         }
