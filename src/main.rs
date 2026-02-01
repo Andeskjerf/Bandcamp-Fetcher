@@ -1,8 +1,8 @@
 use api::bandcamp_api::BandcampAPI;
-use log::{error, info};
+use log::error;
 use services::files::Files;
 use simplelog::{Config, TermLogger};
-use std::{any::Any, collections::HashMap, env};
+use std::{collections::HashMap, env};
 
 use crate::{
     models::api::collection_items::CollectionItems,
@@ -64,7 +64,6 @@ fn main() -> Result<(), ()> {
 
     let mut urls = collection_data.redownload_urls().clone();
     urls.extend(collection_items.redownload_urls().clone());
-    info!("{urls:?}");
 
     let mut artist_subdirs: HashMap<String, Vec<String>> = HashMap::new();
     log::info!("found {} items!", urls.len());
@@ -72,11 +71,11 @@ fn main() -> Result<(), ()> {
     let mut did_something = false;
 
     let sanitizer = Sanitizer::new();
-    // TODO: this ain't pretty. too many things happening
-    // this should give us a collection of direct URLs to get our zips from
-    // for item in items.iter_mut() {
     for (_, url) in urls.iter_mut() {
         // TODO: handle errors gracefully
+        // FIXME: we end up querying Bandcamp for every URL we find, even if we don't need to download an item...
+        // this could end up becoming a lot of queries
+        // imagine if this runs every 5 minutes on a collection that has some number of thousand items...
         let html = api
             .get_download_page_html(url)
             .expect("failed to get download page html")

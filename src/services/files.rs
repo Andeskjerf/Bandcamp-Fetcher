@@ -1,7 +1,4 @@
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-};
+use std::{env, fs, path::PathBuf};
 
 use super::sanitizer::Sanitizer;
 
