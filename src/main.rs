@@ -38,6 +38,7 @@ fn main() -> Result<(), ()> {
         _ => (),
     });
 
+    let sanitizer = Sanitizer::new();
     let api = BandcampAPI::new(&username, &identity);
     let collection_page = api
         .get_collection_summary_html()
@@ -53,11 +54,7 @@ fn main() -> Result<(), ()> {
     let collection_data = pagedata_extractor.get_collection_data().unwrap();
 
     let collection_items: CollectionItems = api
-        .get_collection_items_json(
-            fan.id(),
-            collection_data.last_token(),
-            collection_data.item_count() - collection_data.batch_size(),
-        )
+        .get_collection_items_json(fan.id(), 9999999) // use some absurd count to get everything
         .unwrap()
         .json()
         .unwrap();
@@ -65,17 +62,41 @@ fn main() -> Result<(), ()> {
     let mut urls = collection_data.redownload_urls().clone();
     urls.extend(collection_items.redownload_urls().clone());
 
-    let mut artist_subdirs: HashMap<String, Vec<String>> = HashMap::new();
     log::info!("found {} items!", urls.len());
+
+    let mut artist_subdirs: HashMap<String, Vec<String>> = HashMap::new();
+    let original_url_count = urls.len();
+    urls.retain(|_, url| {
+        let item_id = url
+            .split("=")
+            .last()
+            .expect("failed to get item_id from URL!")
+            .parse::<u64>()
+            .expect("found item_id in URL, but failed to puarse to u64");
+
+        let item = collection_items
+            .items()
+            .iter()
+            .find(|item| item.sale_item_id == item_id)
+            .expect("failed to find item based on item_id in URL");
+
+        let dirs = artist_subdirs
+            .entry(item.band_name.clone())
+            .or_insert_with(|| files.get_artist_subdirectories(&item.band_name));
+
+        let sanitized_title = sanitizer.sanitize_path(&item.item_title);
+        !dirs.contains(&sanitized_title)
+    });
+
+    log::info!(
+        "{} items already found on disk, skipping",
+        original_url_count - urls.len()
+    );
 
     let mut did_something = false;
 
-    let sanitizer = Sanitizer::new();
     for (_, url) in urls.iter_mut() {
         // TODO: handle errors gracefully
-        // FIXME: we end up querying Bandcamp for every URL we find, even if we don't need to download an item...
-        // this could end up becoming a lot of queries
-        // imagine if this runs every 5 minutes on a collection that has some number of thousand items...
         let html = api
             .get_download_page_html(url)
             .expect("failed to get download page html")
@@ -97,7 +118,6 @@ fn main() -> Result<(), ()> {
             .or_insert_with(|| files.get_artist_subdirectories(&item.artist));
 
         let sanitized_title = sanitizer.sanitize_path(&item.title);
-
         if !dirs.contains(&sanitized_title) {
             did_something = true;
             log::info!(

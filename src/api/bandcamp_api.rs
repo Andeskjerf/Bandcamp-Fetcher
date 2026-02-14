@@ -44,9 +44,10 @@ impl BandcampAPI {
     pub fn get_collection_items_json(
         &self,
         fan_id: u64,
-        token: &str,
         count: u32,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
+        // use the oldest possible token to get all results
+        let token = "9999999999:9999999999:t::";
         self.make_request(
             RequestType::Post,
             "https://bandcamp.com/api/fancollection/1/collection_items",

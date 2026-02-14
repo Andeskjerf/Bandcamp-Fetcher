@@ -14,4 +14,8 @@ impl CollectionItems {
     pub fn redownload_urls(&self) -> &HashMap<String, String> {
         &self.redownload_urls
     }
+
+    pub fn items(&self) -> &Vec<BandcampItem> {
+        &self.items
+    }
 }
