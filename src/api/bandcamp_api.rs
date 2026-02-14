@@ -1,7 +1,5 @@
 use std::time::Duration;
 
-use log::info;
-// use reqwest::RequestBuilder;
 use reqwest::blocking::RequestBuilder;
 
 enum RequestType {
@@ -56,16 +54,6 @@ impl BandcampAPI {
         .body(format!(
             "{{\"fan_id\":{fan_id},\"older_than_token\":\"{token}\",\"count\":{count}}}"
         ))
-        .header("Accept", "application/json, text/javascript, */*; q=0.01")
-        .send()
-    }
-
-    pub fn get_collection_summary(&self) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.make_request(
-            RequestType::Get,
-            "https://bandcamp.com/api/fan/2/collection_summary",
-            None,
-        )
         .header("Accept", "application/json, text/javascript, */*; q=0.01")
         .send()
     }

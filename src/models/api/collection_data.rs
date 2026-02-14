@@ -18,18 +18,6 @@ pub struct CollectionData {
 }
 
 impl CollectionData {
-    pub fn last_token(&self) -> &str {
-        &self.last_token
-    }
-
-    pub fn item_count(&self) -> u32 {
-        self.item_count
-    }
-
-    pub fn batch_size(&self) -> u32 {
-        self.batch_size
-    }
-
     pub fn redownload_urls(&self) -> &HashMap<String, String> {
         &self.redownload_urls
     }
