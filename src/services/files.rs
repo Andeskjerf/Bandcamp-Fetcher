@@ -32,7 +32,7 @@ impl Files {
     }
 
     pub fn get_artist_folder(&self, artist: &str) -> String {
-        let path_binding = format!("{}{}", self.path, self.sanitizer.sanitize_path(artist));
+        let path_binding = format!("{}/{}", self.path, self.sanitizer.sanitize_path(artist));
         let path = Files::expand_tilde(&path_binding);
         if !path.exists() {
             self.create_directory(path.to_str().unwrap());
@@ -70,7 +70,6 @@ impl Files {
                 }
             }
         });
-
         subdirs
     }
 

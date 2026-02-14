@@ -88,10 +88,12 @@ fn main() -> Result<(), ()> {
         !dirs.contains(&sanitized_title)
     });
 
-    log::info!(
-        "{} items already found on disk, skipping",
-        original_url_count - urls.len()
-    );
+    if original_url_count != urls.len() {
+        log::info!(
+            "{} items already found on disk, skipping",
+            original_url_count - urls.len()
+        );
+    }
 
     let mut did_something = false;
 
